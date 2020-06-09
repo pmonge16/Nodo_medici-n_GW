@@ -6,32 +6,70 @@ import os
 dict = {}
 cant_datos = 0
 
+#La siguiente función se encarga de leer cada línea del archivo y
+#llamar la función de traducción
 def lector_lineas(archivo):
     frase = ''
+    salto = False
+    cant_datos = 0
     for row in archivo:
         for index in row:
+            if (cant_datos == 10):
+                salto = True
+                cant_datos = 0
+            else:
+                cant_datos += 1
             frase = index
             x = traductor(frase)
             generar_secuencia(x,salto)
-            cant_datos += 1
+            salto = False
 
 def traductor(frase):
+    mascara = ''    #es una variable que guarda temporalmente los datos de contenido
     try:
         print(frase," Traductor:", dict[frase])
         return dict[frase]
+
     except KeyError:
         print(frase)
         contenido = ''
+        existe = False
+
         for c in range(0,len(frase)):
             contenido += frase[c]
+            print("Contenido: ",contenido)
+
             try:
-                print(contenido," Traductor:",dict[contenido])
-                return dict[contenido]
-                break
+                mascara += dict[contenido]
+                existe = True
+                contenido = contenido[1:]
+                if(c==(len(frase)-1)):
+                    print("Retorno:",mascara)
+                    return mascara
+
             except KeyError:
-                if( c > 1):
+                if c > 0 and (frase[c-1] == '.'):
+                    #mascara += frase[c-1]
+                    #contenido = contenido
+                    print("V1: ",mascara, " V2: ",contenido)
+                    #existe = True
+                    
+                    print("Mascara_1: ",contenido[c:])
+                    
+                if ((c == len(frase)-1) and len(frase)>2):
+                    if existe == False:
+                        mascara += contenido[-2]
+                    mascara += contenido[-1]
+                    print("Valor final: ",mascara)
+
+                    return mascara
+
+                if( c > 0 and existe==False):
+                    mascara += contenido[0]
                     contenido = contenido[1:]
                 continue
+
+        print("Valor final.:", frase)            
         return frase
 
 
@@ -48,8 +86,8 @@ def diccionario():
 
 def generar_secuencia(dato, salto):
     file = open("filename.txt", "a")
-    if salto:
-        file.write(dato + os.linesep)
+    if salto==True:
+        file.write(dato + "\n")
     else:
         file.write(dato + ",")
     file.close()
