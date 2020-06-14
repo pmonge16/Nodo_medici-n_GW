@@ -33,44 +33,29 @@ def traductor(frase):
     except KeyError:
         print(frase)
         contenido = ''
-        existe = False
 
         for c in range(0,len(frase)):
             contenido += frase[c]
-            print("Contenido: ",contenido)
 
             try:
                 mascara += dict[contenido]
-                existe = True
-                contenido = contenido[1:]
+                contenido = contenido[2:]
                 if(c==(len(frase)-1)):
-                    print("Retorno:",mascara)
+                    print("Valor final.:", mascara)  
                     return mascara
 
             except KeyError:
-                if c > 0 and (frase[c-1] == '.'):
-                    #mascara += frase[c-1]
-                    #contenido = contenido
-                    print("V1: ",mascara, " V2: ",contenido)
-                    #existe = True
-                    
-                    print("Mascara_1: ",contenido[c:])
-                    
-                if ((c == len(frase)-1) and len(frase)>2):
-                    if existe == False:
-                        mascara += contenido[-2]
-                    mascara += contenido[-1]
-                    print("Valor final: ",mascara)
-
-                    return mascara
-
-                if( c > 0 and existe==False):
+                if( len(contenido) > 1):
                     mascara += contenido[0]
                     contenido = contenido[1:]
-                continue
+                if(c ==(len(frase)-1)):
+                    mascara += frase[c]
+                    
+                else:
+                    continue
 
-        print("Valor final.:", frase)            
-        return frase
+        print("Valor final.:", mascara)            
+        return mascara
 
 
 def diccionario():
@@ -79,7 +64,7 @@ def diccionario():
         if num < 12:
             dict[str(23 + num)] = chr(97 + num)
         if (num > 11)&(num < 26):
-            dict[str(43  + num)] = chr(97 + num)
+            dict[str(43  + num)] = chr(96 + num)
         if num > 25:
             dict[str(43 + num)] = chr(39 + num)
 
