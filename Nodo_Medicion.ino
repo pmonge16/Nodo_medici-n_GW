@@ -61,6 +61,15 @@ int   contador    = 0;
 bool  transmision = false;
 float trama         [12];
 bool inicial      = 0;
+int t_muestreo = 0;     //el tiempo de muestreo en minutos
+int t_trans    = 2;    // el tiempo de transmisión en minutos
+int referencia = 2000;
+
+//Tramas orginales
+int *profundidad ;
+float *temperatura ;
+float *humedad ;
+
 
 void setup(void)
 {
@@ -93,11 +102,22 @@ void limpiar_variables(void){
   transmision = false; 
   }
 
+void desviacion_estandar(int cant_datos){
+
+  for(int i=0; i < cant_datos; i+=1){
+    profundidad_desviacion += pow(profundidad_media - profundidad[i], 2);
+    humedad_desviacion     += pow(humedad_media - humedad[i], 2);
+    temperatura_desviacion += pow(temperatura_media - temperatura[i], 2);
+    }
+  profundidad_desviacion = sqrt(profundidad_desviacion/cant_datos);
+  humedad_desviacion     = sqrt(humedad_desviacion/cant_datos);
+  temperatura_desviacion = sqrt(temperatura_desviacion/cant_datos);
+  }
+
 
 void loop(void)
 {
-  int t_muestreo = 0;     //el tiempo de muestreo en minutos
-  int t_trans    = 2;    // el tiempo de transmisión en minutos
+
   int mascara    = 0;     // variable tipo máscara para contener temporalmente los diferentes valores
   uint8_t t_inicial;
   
@@ -133,25 +153,25 @@ void loop(void)
     }
     //Sensor de profundidad
     mascara                 = distanceSensor.getDistance();
-    profundidad_media      = (profundidad_media + (2000 - mascara))/2; //Se obtiene el resultado de la medición
-    profundidad_desviacion   += pow(((2000 - mascara) - profundidad_media),2);
+    profundidad[contador] = mascara;
+    profundidad_media      = (profundidad_media + (referencia - mascara))/2; //Se obtiene el resultado de la medición
     Serial.print("Profundidad: ");
     Serial.println(profundidad_media);
-    Serial.println(profundidad_desviacion);
-    Serial.println((2000 - mascara) - profundidad_media);
+
+
     distanceSensor.clearInterrupt();
     distanceSensor.stopRanging();
 
     mascara             = dht.readHumidity();
+    humedad[contador]   = mascara;
     humedad_media      += mascara/2;
-    humedad_desviacion += pow((mascara - humedad_media),2);
     Serial.print("Humedad: ");
     Serial.println(humedad_media);
  
     sensors.requestTemperatures();
     mascara                 = sensors.getTempCByIndex(0);
+    temperatura[contador]   = mascara;
     temperatura_media      += mascara/2;
-    temperatura_desviacion += pow((mascara - temperatura_media),2);
     Serial.print("Temperatura: "); 
     Serial.println(temperatura_media);
 
@@ -160,11 +180,8 @@ void loop(void)
     }  
     
     if (abs(int(now.minute()) - int(t_inicial)) > t_trans){
-      Serial.print("WHAT: ");
-      
-      temperatura_desviacion = sqrt(temperatura_desviacion/contador);
-      humedad_desviacion     = sqrt(humedad_desviacion/contador);
-      profundidad_desviacion   = sqrt(profundidad_desviacion/contador);
+      Serial.print("Transmision: ");
+      desviacion_estandar(contador);
       trama[0]  = now.day();
       Serial.println(trama[0]);
       trama[1]  = now.month();
