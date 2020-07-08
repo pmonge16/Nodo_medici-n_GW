@@ -38,8 +38,10 @@ SFEVL53L1X distanceSensor;
 // contiene la fecha de cada medida tomada
 //fecha = []; 
 int Hor = 0;
-uint8_t Min = 0;
-uint8_t t_muestra = 0;
+uint8_t Min;
+uint8_t t_muestra;
+uint8_t seg;
+uint8_t s_muestra;
 int Sec = 0;
 
 
@@ -58,6 +60,7 @@ bool  condicion   = false;
 int   contador    = 0;
 bool  transmision = false;
 float trama         [12];
+bool inicial      = 0;
 
 void setup(void)
 {
@@ -83,7 +86,7 @@ void limpiar_variables(void){
   profundidad_desviacion = 0;
   humedad_desviacion     = 0;
   temperatura_desviacion = 0;
-  
+  inicial =                0;
   //variable adicionales
   condicion   = false;
   contador    = 0;
@@ -93,30 +96,36 @@ void limpiar_variables(void){
 
 void loop(void)
 {
-  int t_muestreo = 1;     //el tiempo de muestreo en minutos
-  int t_trans    = 30;    // el tiempo de transmisión en minutos
+  int t_muestreo = 0;     //el tiempo de muestreo en minutos
+  int t_trans    = 2;    // el tiempo de transmisión en minutos
   int mascara    = 0;     // variable tipo máscara para contener temporalmente los diferentes valores
-  DateTime t_inicial;
+  uint8_t t_inicial;
+  
   
   //Primera iteración, establece parámetros iniciales de tiempo
   // para poder establecer referencia temporal de cada medición
-  if (contador == 0){
+  if (inicial == 0){
+    Serial.println("ENTRE...");
     DateTime now = rtc.now();
     Min = now.minute();
-    contador = 1;
+    seg = now.second();
+    inicial = 1;
     if (condicion == false){
-      t_inicial = now;
+      t_inicial = now.minute();
       condicion = true;
+      Serial.print("Tiempo inicial: ");
+      Serial.println(t_inicial);
       }
     }
 
   //Tiempo actual de cada medida
   DateTime now = rtc.now();
   t_muestra = now.minute();
-
+  s_muestra = now.second();
+  
 
   //Si se cumple el tiempo de transmision
-  if (abs(t_muestra - Min) > t_muestreo){
+  if (((t_muestra - Min) > t_muestreo) && s_muestra == seg){
     
     distanceSensor.startRanging(); //Inicia la medición
     while (!distanceSensor.checkForDataReady()) {
@@ -124,10 +133,12 @@ void loop(void)
     }
     //Sensor de profundidad
     mascara                 = distanceSensor.getDistance();
-    profundidad_media      += (2000 - mascara)/2; //Se obtiene el resultado de la medición
-    profundidad_desviacion   += pow((mascara - profundidad_media),2);
+    profundidad_media      = (profundidad_media + (2000 - mascara))/2; //Se obtiene el resultado de la medición
+    profundidad_desviacion   += pow(((2000 - mascara) - profundidad_media),2);
     Serial.print("Profundidad: ");
     Serial.println(profundidad_media);
+    Serial.println(profundidad_desviacion);
+    Serial.println((2000 - mascara) - profundidad_media);
     distanceSensor.clearInterrupt();
     distanceSensor.stopRanging();
 
@@ -145,24 +156,39 @@ void loop(void)
     Serial.println(temperatura_media);
 
     contador++;
+    inicial = 0;
     }  
-
-    if (abs(now.unixtime()-t_inicial.unixtime())>t_trans){
+    
+    if (abs(int(now.minute()) - int(t_inicial)) > t_trans){
+      Serial.print("WHAT: ");
+      
       temperatura_desviacion = sqrt(temperatura_desviacion/contador);
       humedad_desviacion     = sqrt(humedad_desviacion/contador);
       profundidad_desviacion   = sqrt(profundidad_desviacion/contador);
       trama[0]  = now.day();
+      Serial.println(trama[0]);
       trama[1]  = now.month();
+      Serial.println(trama[1]);
       trama[2]  = now.year();
+      Serial.println(trama[2]);
       trama[3]  = now.hour();
+      Serial.println(trama[3]);
       trama[4]  = now.minute();
+      Serial.println(trama[4]);
       trama[5]  = profundidad_media;
+      Serial.println(trama[5]);
       trama[6]  = profundidad_desviacion;
+      Serial.println(trama[6]);
       trama[7]  = humedad_media;
+      Serial.println(trama[7]);
       trama[8]  = humedad_desviacion;
+      Serial.println(trama[8]);
       trama[9]  = temperatura_media;
+      Serial.println(trama[9]);
       trama[10] = temperatura_desviacion;
+      Serial.println(trama[10]);
       trama[11] = ID;
+      Serial.println(trama[11]);
       
       transmision = true;
       limpiar_variables();
